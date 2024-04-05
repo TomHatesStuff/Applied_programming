@@ -1,6 +1,9 @@
 -module(tic_tac_toe).
 -export([start/0]).
 
+% Constants
+-define(EMPTY, empty).
+
 % Function to start the game
 start() ->
     Board = init_board(),
@@ -8,9 +11,9 @@ start() ->
 
 % Function to initialize the game board
 init_board() ->
-    [[empty,empty,empty],
-     [empty,empty,empty],
-     [empty,empty,empty]].
+    [[?EMPTY, ?EMPTY, ?EMPTY],
+     [?EMPTY, ?EMPTY, ?EMPTY],
+     [?EMPTY, ?EMPTY, ?EMPTY]].
 
 % Function to display the game board
 display_board(Board) ->
@@ -21,12 +24,14 @@ display_board(Board) ->
     io:format("~c | ~c | ~c~n~n", [display_cell(Board, 3, 1), display_cell(Board, 3, 2), display_cell(Board, 3, 3)]).
 
 % Function to display a cell on the board
-display_cell(Board, Row, Col) ->
+display_cell(Board, Row, Col) when Row >= 1, Row =< 3, Col >= 1, Col =< 3 ->
     case lists:nth(Row, lists:nth(Col, Board)) of
-        x -> $X;
-        o -> $O;
-        _ -> $_
-    end.
+        x -> $x;
+        o -> $o;
+        _ -> $"  % Empty cell
+    end;
+display_cell(_, _, _) ->
+    $"  % Default case if indices are out of bounds
 
 % Function to start the game loop
 play(Board, Player) ->
@@ -59,21 +64,19 @@ make_move(Board, Player) ->
             make_move(Board, Player)
     end.
 
-
-
 % Function to check if a move is valid
 is_valid_move(Board, Row, Col) ->
     case lists:nth(Row, lists:nth(Col, Board)) of
-        empty -> true
+        ?EMPTY -> true;
+        _ -> false
     end.
-
 
 % Function to set a cell with a player's move
 set_cell(Board, Row, Col, Value) ->
-    lists:sublist(Board, Row-1) ++
-    [lists:sublist(lists:nth(Row, Board), Col-1) ++
-    [Value | tl(lists:nth(Row, Board, Col))] |
-    tl(Board)].
+    NewRow = lists:nth(Row, Board),
+    UpdatedRow = lists:sublist(NewRow, Col-1) ++ [Value] ++ lists:nthtail(Col, NewRow),
+    NewBoard = lists:sublist(Board, Row-1) ++ [UpdatedRow] ++ lists:nthtail(Row, Board),
+    NewBoard.
 
 % Function to check for a win
 check_win(Board) ->
@@ -87,7 +90,7 @@ check_win(Board) ->
                         {win, Player} -> {win, Player};
                         _ ->
                             case check_draw(Board) of
-                                true -> {win, empty};
+                                true -> {win, ?EMPTY};
                                 false -> continue
                             end
                     end
@@ -102,14 +105,6 @@ check_rows(Board) ->
 check_columns(Board) ->
     TransposedBoard = transpose(Board),
     check_lines(TransposedBoard).
-
-transpose([]) ->
-    [];
-transpose([[] | _]) ->
-    [];
-transpose(Matrix) ->
-    [lists:map(fun([H|_]) -> H end, Matrix) | transpose(lists:map(fun([_|T]) -> T end, Matrix))].
-
 
 % Function to check diagonals for a win
 check_diagonals(Board) ->
@@ -127,7 +122,18 @@ check_lines([Line | Rest]) ->
         _ -> check_lines(Rest)
     end.
 
-
 % Function to check for a draw
 check_draw(Board) ->
-    not lists:any(fun(Row) -> lists:any(fun(Cell) -> Cell == empty end, Row) end, Board).
+    not lists:any(fun(Row) -> lists:any(fun(Cell) -> Cell == ?EMPTY end, Row) end, Board).
+
+% Function to transpose a matrix
+transpose([]) ->
+    [];
+transpose([[] | _]) ->
+    [];
+transpose(Matrix) ->
+    [lists:map(fun([H|_]) -> H end, Matrix) | transpose(lists:map(fun([_|T]) -> T end, Matrix))].
+
+% create beam erlc tic_tac_toe.erl
+% then enter erl
+% tic_tac_toe:start().
