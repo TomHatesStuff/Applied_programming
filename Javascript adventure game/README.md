@@ -17,7 +17,7 @@ This software will help cure the problem that we know as boredom.
 I used Fucntions and of course lots of websites to look up how to write in javascript.
 
 {Describe the programming language that you used and any libraries.}
-I used Javascript, HTMl, and CSS 
+I used Javascript, HTML, and CSS 
 
 # Useful Websites
 
