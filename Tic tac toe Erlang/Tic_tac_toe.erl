@@ -61,8 +61,9 @@ make_move(Board, Player) ->
 % Function to check if a move is valid
 is_valid_move(Board, Row, Col) ->
     case lists:nth(Row, lists:nth(Col, Board)) of
-        _ -> true;
+        empty -> true
     end.
+
 
 % Function to set a cell with a player's move
 set_cell(Board, Row, Col, Value) ->
@@ -106,6 +107,8 @@ check_diagonals(Board) ->
     check_lines(Diagonals).
 
 % Function to check lines for a win
+check_lines([]) ->
+    continue;
 check_lines([Line | Rest]) ->
     case Line of
         [x,x,x] -> {win, x};
