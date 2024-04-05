@@ -47,7 +47,8 @@ play(Board, Player) ->
 
 % Function to make a move
 make_move(Board, Player) ->
-    io:format("Player ~c's turn. Enter row (1-3) and column (1-3) separated by a space: ", [Player]),
+    PlayerSymbol = atom_to_list(Player),
+    io:format("Player ~s's turn. Enter row (1-3) and column (1-3) separated by a space: ", [PlayerSymbol]),
     {ok, [Row, Col]} = io:fread("", "~d ~d"),
     case is_valid_move(Board, Row, Col) of
         true ->
@@ -57,6 +58,8 @@ make_move(Board, Player) ->
             io:format("Invalid move. Please try again.~n"),
             make_move(Board, Player)
     end.
+
+
 
 % Function to check if a move is valid
 is_valid_move(Board, Row, Col) ->
@@ -97,8 +100,16 @@ check_rows(Board) ->
 
 % Function to check columns for a win
 check_columns(Board) ->
-    TransposedBoard = lists:zip(Board),
+    TransposedBoard = transpose(Board),
     check_lines(TransposedBoard).
+
+transpose([]) ->
+    [];
+transpose([[] | _]) ->
+    [];
+transpose(Matrix) ->
+    [lists:map(fun([H|_]) -> H end, Matrix) | transpose(lists:map(fun([_|T]) -> T end, Matrix))].
+
 
 % Function to check diagonals for a win
 check_diagonals(Board) ->
@@ -115,6 +126,7 @@ check_lines([Line | Rest]) ->
         [o,o,o] -> {win, o};
         _ -> check_lines(Rest)
     end.
+
 
 % Function to check for a draw
 check_draw(Board) ->
