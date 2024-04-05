@@ -62,7 +62,6 @@ make_move(Board, Player) ->
 is_valid_move(Board, Row, Col) ->
     case lists:nth(Row, lists:nth(Col, Board)) of
         _ -> true;
-        _ -> false
     end.
 
 % Function to set a cell with a player's move
