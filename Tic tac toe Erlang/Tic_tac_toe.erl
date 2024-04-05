@@ -1,87 +1,119 @@
 -module(tic_tac_toe).
--compile(export_all).
-
-% Game state representation
--record(state, {board :: [ [ '_', '_', '_' ], [ '_', '_', '_' ], [ '_', '_', '_' ] ],
-                player :: 'X' | 'O' }).
+-export([start/0]).
 
 % Function to start the game
 start() ->
-    State = #state{},
-    game_loop(State).
+    Board = init_board(),
+    play(Board, x).
 
-% Game loop
-game_loop(State) ->
-    display_board(State),
-    case check_winner(State) of
-        {win, Player} ->
-            io:format("Player ~c wins!~n", [Player]);
-        draw ->
-            io:format("It's a draw!~n");
-        continue ->
-            try
-                NewState = make_move(State),
-                game_loop(NewState)
-            catch
-                throw:invalid_move ->
-                    io:format("Invalid move. Please try again.~n"),
-                    game_loop(State)
-            end
+% Function to initialize the game board
+init_board() ->
+    [[_,_,_],
+     [_,_,_],
+     [_,_,_]].
+
+% Function to display the game board
+display_board(Board) ->
+    io:format("~n~c | ~c | ~c~n", [display_cell(Board, 1, 1), display_cell(Board, 1, 2), display_cell(Board, 1, 3)]),
+    io:format("---------~n"),
+    io:format("~c | ~c | ~c~n", [display_cell(Board, 2, 1), display_cell(Board, 2, 2), display_cell(Board, 2, 3)]),
+    io:format("---------~n"),
+    io:format("~c | ~c | ~c~n~n", [display_cell(Board, 3, 1), display_cell(Board, 3, 2), display_cell(Board, 3, 3)]).
+
+% Function to display a cell on the board
+display_cell(Board, Row, Col) ->
+    case lists:nth(Row, lists:nth(Col, Board)) of
+        x -> $X;
+        o -> $O;
+        _ -> $_
     end.
 
-% Display the game board
-display_board(#state{board=Board}) ->
-    io:format("~n ~c | ~c | ~c ~n---+---+---~n ~c | ~c | ~c ~n---+---+---~n ~c | ~c | ~c ~n~n",
-              lists:flatten(Board)).
+% Function to start the game loop
+play(Board, Player) ->
+    display_board(Board),
+    case check_win(Board) of
+        {win, Player} ->
+            io:format("Player ~c wins!~n", [Player]);
+        {win, _} ->
+            io:format("It's a draw!~n");
+        continue ->
+            NewBoard = make_move(Board, Player),
+            NextPlayer = case Player of
+                x -> o;
+                o -> x
+            end,
+            play(NewBoard, NextPlayer)
+    end.
 
-% Check if a player has won or if it's a draw
-check_winner(#state{board=Board, player=Player}) ->
-    % Check rows
-    case lists:any(fun(Row) -> Row == [Player, Player, Player] end, Board) of
-        true -> {win, Player};
+% Function to make a move
+make_move(Board, Player) ->
+    io:format("Player ~c's turn. Enter row (1-3) and column (1-3) separated by a space: ", [Player]),
+    {ok, [Row, Col]} = io:fread("", "~d ~d"),
+    case is_valid_move(Board, Row, Col) of
+        true ->
+            NewBoard = set_cell(Board, Row, Col, Player),
+            NewBoard;
         false ->
-            % Check columns
-            Transposed = lists:zip(Board),
-            case lists:any(fun(Column) -> Column == [Player, Player, Player] end, Transposed) of
-                true -> {win, Player};
-                false ->
-                    % Check diagonals
-                    case lists:any(fun(I) -> lists:nth(1, lists:nth(I, Board)) == Player end, [1, 2, 3]) of
-                        true -> {win, Player};
-                        false ->
-                            % Check for draw
-                            case lists:all(fun(Row) -> not lists:any(fun(Cell) -> Cell == '_' end, Row) end, Board) of
-                                true -> draw;
+            io:format("Invalid move. Please try again.~n"),
+            make_move(Board, Player)
+    end.
+
+% Function to check if a move is valid
+is_valid_move(Board, Row, Col) ->
+    case lists:nth(Row, lists:nth(Col, Board)) of
+        _ -> true;
+        _ -> false
+    end.
+
+% Function to set a cell with a player's move
+set_cell(Board, Row, Col, Value) ->
+    lists:sublist(Board, Row-1) ++
+    [lists:sublist(lists:nth(Row, Board), Col-1) ++
+    [Value | tl(lists:nth(Row, Board, Col))] |
+    tl(Board)].
+
+% Function to check for a win
+check_win(Board) ->
+    case check_rows(Board) of
+        {win, Player} -> {win, Player};
+        _ ->
+            case check_columns(Board) of
+                {win, Player} -> {win, Player};
+                _ ->
+                    case check_diagonals(Board) of
+                        {win, Player} -> {win, Player};
+                        _ ->
+                            case check_draw(Board) of
+                                true -> {win, _};
                                 false -> continue
                             end
                     end
             end
     end.
 
-% Make a move
-make_move(State) ->
-    io:format("Player ~c's turn. Enter move (row,column): ", [State#state.player]),
-    {ok, [Row, Column]} = io:fread("~d,~d"),
-    case valid_move(State, Row, Column) of
-        true ->
-            NewBoard = set_cell(State#state.board, Row, Column, State#state.player),
-            NewPlayer = case State#state.player of
-                            'X' -> 'O';
-                            'O' -> 'X'
-                        end,
-            #state{board=NewBoard, player=NewPlayer};
-        false ->
-            throw(invalid_move)
+% Function to check rows for a win
+check_rows(Board) ->
+    check_lines(Board).
+
+% Function to check columns for a win
+check_columns(Board) ->
+    TransposedBoard = lists:zip(Board),
+    check_lines(TransposedBoard).
+
+% Function to check diagonals for a win
+check_diagonals(Board) ->
+    Diagonals = [[lists:nth(Row, lists:nth(Row, Board)) || Row <- lists:seq(1, 3)],
+                 [lists:nth(Row, lists:nth(4-Row, Board)) || Row <- lists:seq(1, 3)]],
+    check_lines(Diagonals).
+
+% Function to check lines for a win
+check_lines([Line | Rest]) ->
+    case Line of
+        [x,x,x] -> {win, x};
+        [o,o,o] -> {win, o};
+        _ -> check_lines(Rest)
     end.
 
-% Check if a move is valid
-valid_move(State, Row, Column) when Row >= 1, Row =< 3, Column >= 1, Column =< 3 ->
-    lists:nth(Row, lists:nth(Column, State#state.board)) == '_';
-valid_move(_, _, _) ->
-    false.
-
-% Set a cell on the board to a value
-set_cell(Board, Row, Column, Value) ->
-    lists:sublist(Board, Row-1) ++
-        [lists:sublist(lists:nth(Row, Board), Column-1) ++ [Value] ++ lists:nthtail(Column, lists:nth(Row, Board))] ++
-        lists:nthtail(Row, Board).
+% Function to check for a draw
+check_draw(Board) ->
+    not lists:any(fun(Row) -> lists:any(fun(Cell) -> Cell == _ end, Row) end, Board).
