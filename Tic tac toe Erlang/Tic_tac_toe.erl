@@ -8,9 +8,9 @@ start() ->
 
 % Function to initialize the game board
 init_board() ->
-    [[_,_,_],
-     [_,_,_],
-     [_,_,_]].
+    [[empty,empty,empty],
+     [empty,empty,empty],
+     [empty,empty,empty]].
 
 % Function to display the game board
 display_board(Board) ->
@@ -84,7 +84,7 @@ check_win(Board) ->
                         {win, Player} -> {win, Player};
                         _ ->
                             case check_draw(Board) of
-                                true -> {win, _};
+                                true -> {win, empty};
                                 false -> continue
                             end
                     end
@@ -116,4 +116,4 @@ check_lines([Line | Rest]) ->
 
 % Function to check for a draw
 check_draw(Board) ->
-    not lists:any(fun(Row) -> lists:any(fun(Cell) -> Cell == _ end, Row) end, Board).
+    not lists:any(fun(Row) -> lists:any(fun(Cell) -> Cell == empty end, Row) end, Board).
