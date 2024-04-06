@@ -18,9 +18,31 @@ play_game(Board) ->
             play_game(NewBoard)
     end.
 
-check_winner([P, P, P | _]) -> true;
-check_winner([_, _, _ | Rows]) -> check_winner(Rows);
-check_winner([_, _, _ | _]) -> false.
+check_winner(Board) ->
+    DiagonalWin = check_diagonal(Board),
+    ColumnWin = check_columns(Board),
+    RowWin = check_rows(Board),
+    DiagonalWin orelse ColumnWin orelse RowWin.
+
+check_diagonal(Board) ->
+    Diagonal1 = [lists:nth(1, Board), lists:nth(5, Board), lists:nth(9, Board)],
+    Diagonal2 = [lists:nth(3, Board), lists:nth(5, Board), lists:nth(7, Board)],
+    check_line(Diagonal1) orelse check_line(Diagonal2).
+
+check_columns(Board) ->
+    Columns = [[lists:nth(N, Board) || N <- [1, 4, 7]],
+                [lists:nth(N, Board) || N <- [2, 5, 8]],
+                [lists:nth(N, Board) || N <- [3, 6, 9]]],
+    lists:any(fun check_line/1, Columns).
+
+check_rows(Board) ->
+    Rows = [lists:sublist(Board, 1, 3),
+            lists:sublist(Board, 4, 6),
+            lists:sublist(Board, 7, 9)],
+    lists:any(fun check_line/1, Rows).
+
+check_line([P, P, P]) when P /= "" -> true;
+check_line(_) -> false.
 
 get_player_move() ->
     display_message("Enter your move (1-9): "),
